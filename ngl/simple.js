@@ -1,4 +1,4 @@
-function buildNglViewer(divid, data1) {
+function buildNglViewer(divid, data) {
     console.log("buildNglViewer");
 
     var viewer_id =  divid + "_nglviewer"
@@ -19,43 +19,60 @@ function buildNglViewer(divid, data1) {
         stage.removeAllComponents();
     }
 
-    if (data1) {
+    for (var i=0; i < data.length; i++) {
+        var d = data[i];
+        if (d) {
 
-        var mols = data1.molecules;
+            var mols = d.molecules;
 
-        var selectEl = outerDiv.select("select.representation1");
-        var representation = selectEl.node().value;
+            //console.log("Loading " + mediaType + " " + ext + " " + mols.length + " " + typeof mols);
 
-        var displayEl = outerDiv.select("select.display1");
-        displayEl.selectAll("*").remove();
+            var stringBlob = new Blob( [ mols ], { type:  d.mediaType} );
+            stage.loadFile( stringBlob, { ext: d.extension, name: "input" + (i+1)} ).then( function( comp ) {
+                console.log("Processing " + comp.name);
+                var compIdx = comp.name.substring(5);
 
-        //console.log("Loading " + mediaType + " " + ext + " " + mols.length + " " + typeof mols);
+                comp.addRepresentation(representation == null ? "ball+stick" : representation, { multipleBond: true } );
+                comp.autoView();
+                console.log("Added component " + comp.name);
 
-        var stringBlob = new Blob( [ mols ], { type:  data1.mediaType} );
-        stage.loadFile( stringBlob, { ext: data1.extension, name: "input1"} ).then( function( comp ) {
-            comp.addRepresentation(representation == null ? "ball+stick" : representation, { multipleBond: true } );
-            comp.autoView();
-            console.log("Added component " + comp.name);
+                var selectEl = outerDiv.select("select.representation" + compIdx);
+                var representation = selectEl.node().value;
+                var displayEl = outerDiv.select("select.display" + compIdx);
+                displayEl.selectAll("*").remove();
 
-
-            displayEl.append(function() { return _createDisplayOption("all", "All"); });
-            displayEl.append(function() { return _createDisplayOption("none", "None"); });
-            var index = 1
-            comp.structure.eachModel(function(model) {
-                //console.log("Setting up model " + model.index);
-                displayEl.append(function() {
-                    var opt = document.createElement("option");
-                    opt.value = ""+index;
-                    opt.text = ""+index;
-                    index++;
-                    return opt;
+                displayEl.append(function() { return _createDisplayOption("all", "All"); });
+                displayEl.append(function() { return _createDisplayOption("none", "None"); });
+                var index = 1
+                comp.structure.eachModel(function(model) {
+                    console.log("Setting up model " + compIdx + " " + model.index);
+                    displayEl.append(function() {
+                        var opt = document.createElement("option");
+                        opt.value = ""+index;
+                        opt.text = ""+index;
+                        index++;
+                        return opt;
+                    });
                 });
+
+
+//                comp.structure.eachEntity(function(entity) {
+//                    console.log("Entity: " + entity.type + " " + entity.description);
+//                });
+//
+//                comp.structure.eachChain(function(c) {
+//                    console.log("Chain: " + c.chainid + " " + c.chainname + " " + c.entity.description);
+//                });
+//
+//                comp.structure.eachPolymer(function(p) {
+//                    console.log("Polymer: " + p.residueIndexStart + " - " + p.residueIndexEnd);
+//                });
+
             });
 
-        });
-
-    } else {
-        console.log("No data1");
+        } else {
+            console.log("No data" + (i+1));
+        }
     }
 }
 

@@ -2,14 +2,16 @@
 <head>
     <meta charset="utf-8">
 
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.2/semantic.min.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.2/semantic.min.css" rel="stylesheet"
+          type="text/css"/>
     <link rel="stylesheet" type="text/css" href="simple.css">
 
     <script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
     <script type="text/javascript" src="../libs/ngl.js"></script>
     <script type="text/javascript" src="simple.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.2/semantic.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.1.0.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.2/semantic.min.js"></script>
+
 
 </head>
 <body>
@@ -18,29 +20,53 @@
 <script>
     function loadData() {
         console.log("Loading data");
-        //var sdf = document.getElementById("input1").value
-        //console.log("Length: " + sdf.length);
+        var data1, data2;
 
-        var data1 = {
-            mediaType: "text/plain",
-            extension: "sdf",
-            molecules: document.getElementById("input1").value
-        };
+        var mols1 =  document.getElementById("input1").value;
+        if (mols1) {
+            data1 = {
+                mediaType: "text/plain",
+                extension: document.getElementById("format1").value,
+                molecules: mols1
+            };
+        }
+
+        var mols2 =  document.getElementById("input2").value;
+        if (mols2) {
+            data2 = {
+                mediaType: "text/plain",
+                extension: document.getElementById("format2").value,
+                molecules: mols2
+            };
+        }
+
+
+
         try {
-            buildNglViewer("viewport", data1);
+            buildNglViewer("viewport", [data1, data2]);
         } catch (e) {
             console.log("Error: " + e.message);
         }
+
         return false;
 
     }
-    </script>
+
+
+
+
+
+
+</script>
 
 
 <form id="settings">
-    Input1:
-    <br>
-    <textarea id="input1" rows="20" cols="60">1-pyrimethamine
+    <table cellpadding="5" cellspacing="5">
+        <tr>
+            <td>
+                Input1:
+                <br>
+                <textarea id="input1" rows="10" cols="60">1-pyrimethamine
   Cerius2 12180216023D 1   1.00000
  Structure written by MMmdl.
  30 31  0  0  0  0  0  0  0  0999 V2000
@@ -400,8 +426,30 @@ M  CHG  2  24   1  26  -1
 M  END
 $$$$
 </textarea>
+            </td>
+            <td>
+                Input2:
+                <br>
+                <textarea id="input2" rows="10" cols="60"></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <select id="format1">
+                    <option value="sdf">SDF</option>
+                    <option value="pdb">PDB</option>
+                </select>
+            </td>
+            <td>
+                <select id="format2">
+                    <option value="sdf">SDF</option>
+                    <option value="pdb">PDB</option>
+                </select>
+            </td>
+        </tr>
+    </table>
     <br>
-    <button id="load1" onclick="loadData(); return false;">Click to load the structures</button></button>
+    <button id="load" onclick="loadData(); return false;">Click to load the structures</button>
 </form>
 
 
@@ -410,19 +458,41 @@ $$$$
         <span>Title Bar</span>
     </div>
     <div class="toolbar">
-        <div class="ui labeled input">
-            <span class="ui label">Input 1:</span>
-            <select class="ui compact dropdown representation1" onchange="representationChanged('viewport', this, 1); return false;">
-                <option value="ball+stick">Ball & Stick</option>
-                <option value="cartoon">Cartoon</option>
-                <option value="hyperball">Hyperball</option>
-                <option value="licorice">Licorice</option>
-                <option value="spacefill">Spacefill</option>
-            </select>
-            <span class="ui label">Display:</span>
-            <select name="display" class="ui compact dropdown display1" onchange="displayChanged('viewport', this, 1); return false;">
-            </select>
+        <div>
+            <div class="ui labeled input">
+                <span class="ui label">Input 1:</span>
+                <select class="ui compact dropdown representation1"
+                        onchange="representationChanged('viewport', this, 1); return false;">
+                    <option value="ball+stick">Ball & Stick</option>
+                    <option value="cartoon">Cartoon</option>
+                    <option value="hyperball">Hyperball</option>
+                    <option value="licorice">Licorice</option>
+                    <option value="spacefill">Spacefill</option>
+                </select>
+                <span class="ui label">Display:</span>
+                <select name="display" class="ui compact dropdown display1"
+                        onchange="displayChanged('viewport', this, 1); return false;">
+                </select>
+            </div>
         </div>
+        <div>
+            <div class="ui labeled input">
+                <span class="ui label">Input 2:</span>
+                <select class="ui compact dropdown representation2"
+                        onchange="representationChanged('viewport', this, 2); return false;">
+                    <option value="ball+stick">Ball & Stick</option>
+                    <option value="cartoon">Cartoon</option>
+                    <option value="hyperball">Hyperball</option>
+                    <option value="licorice">Licorice</option>
+                    <option value="spacefill">Spacefill</option>
+                </select>
+                <span class="ui label">Display:</span>
+                <select name="display" class="ui compact dropdown display2"
+                        onchange="displayChanged('viewport', this, 2); return false;">
+                </select>
+            </div>
+        </div>
+    </div>
     <div class="main"></div>
     <div class="extra content line">
         <span>Status</span>
