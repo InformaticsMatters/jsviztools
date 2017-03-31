@@ -52,11 +52,6 @@
 
     }
 
-
-
-
-
-
 </script>
 
 
@@ -66,7 +61,7 @@
             <td>
                 Input1:
                 <br>
-                <textarea id="input1" rows="10" cols="60">1-pyrimethamine
+                <textarea id="input1" rows="10" cols="50">1-pyrimethamine
   Cerius2 12180216023D 1   1.00000
  Structure written by MMmdl.
  30 31  0  0  0  0  0  0  0  0999 V2000
@@ -430,18 +425,18 @@ $$$$
             <td>
                 Input2:
                 <br>
-                <textarea id="input2" rows="10" cols="60"></textarea>
+                <textarea id="input2" rows="10" cols="50"></textarea>
             </td>
         </tr>
         <tr>
             <td>
-                <select id="format1">
+                <select id="format1" class="ui compact dropdown">
                     <option value="sdf">SDF</option>
                     <option value="pdb">PDB</option>
                 </select>
             </td>
             <td>
-                <select id="format2">
+                <select id="format2" class="ui compact dropdown">
                     <option value="sdf">SDF</option>
                     <option value="pdb">PDB</option>
                 </select>
@@ -453,11 +448,26 @@ $$$$
 </form>
 
 
-<div id="viewport" style="width:600px; height:600px;">
-    <div class="headers">
+<div class="ui multiple dropdown">
+    <input type="hidden" name="colour">
+    <i class="dropdown icon"></i>
+    <div class="default text">Colour</div>
+    <div class="menu">
+        <div class="item" data-value="red">red</div>
+        <div class="item" data-value="green">green</div>
+        <div class="item" data-value="blue">blue</div>
+        <div class="item" data-value="yellow">yellow</div>
+        <div class="item" data-value="orange">orange</div>
+        <div class="item" data-value="brown">brown</div>
+    </div>
+</div>
+<p></p>
+
+<div id="viewport" style="width:700px;">
+    <div class="headers" style="clear: both;">
         <span>Title Bar</span>
     </div>
-    <div class="toolbar">
+    <!--div class="toolbar">
         <div>
             <div class="ui labeled input">
                 <span class="ui label">Input 1:</span>
@@ -472,6 +482,7 @@ $$$$
                 <span class="ui label">Display:</span>
                 <select name="display" class="ui compact dropdown display1"
                         onchange="displayChanged('viewport', this, 1); return false;">
+                    <option value="yes">Yes</option>
                 </select>
             </div>
         </div>
@@ -492,12 +503,34 @@ $$$$
                 </select>
             </div>
         </div>
+    </div-->
+    <div  style="height:400px;">
+        <div class="ui vertical accordion menu controls" style="float: right; width: 250px; height: 100%;">
+            <div class="active title">
+                <i class="dropdown icon"></i>Input 1 Options</div>
+            <div class="active content controls1">
+                <p>No molecules</p>
+            </div>
+
+            <div class="title">
+                <i class="dropdown icon"></i>Input 2 Options</div>
+            <div class="content controls2">
+                <p>No molecules</p>
+            </div>
+        </div>
+        <div class="main" style="height: 100%; background:black;"></div>
     </div>
-    <div class="main"></div>
-    <div class="extra content line">
+    <div class="extra content line" style="clear: both;">
         <span>Status</span>
     </div>
 </div>
+
+
+<script>
+$('.ui.accordion').accordion();
+//$('.ui.dropdown').dropdown();
+</script>
+
 
 </body>
 </html>
