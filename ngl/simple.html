@@ -6,7 +6,6 @@
           type="text/css"/>
     <link rel="stylesheet" type="text/css" href="simple.css">
 
-    <script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
     <script type="text/javascript" src="../libs/ngl.js"></script>
     <script type="text/javascript" src="simple.js"></script>
     <script src="https://code.jquery.com/jquery-3.1.0.js"></script>
@@ -51,6 +50,7 @@
         return false;
 
     }
+
 
 </script>
 
@@ -448,76 +448,32 @@ $$$$
 </form>
 
 
-<div class="ui multiple dropdown">
-    <input type="hidden" name="colour">
-    <i class="dropdown icon"></i>
-    <div class="default text">Colour</div>
-    <div class="menu">
-        <div class="item" data-value="red">red</div>
-        <div class="item" data-value="green">green</div>
-        <div class="item" data-value="blue">blue</div>
-        <div class="item" data-value="yellow">yellow</div>
-        <div class="item" data-value="orange">orange</div>
-        <div class="item" data-value="brown">brown</div>
-    </div>
-</div>
-<p></p>
-
 <div id="viewport" style="width:700px;">
     <div class="headers" style="clear: both;">
         <span>Title Bar</span>
     </div>
-    <!--div class="toolbar">
-        <div>
-            <div class="ui labeled input">
-                <span class="ui label">Input 1:</span>
-                <select class="ui compact dropdown representation1"
-                        onchange="representationChanged('viewport', this, 1); return false;">
-                    <option value="ball+stick">Ball & Stick</option>
-                    <option value="cartoon">Cartoon</option>
-                    <option value="hyperball">Hyperball</option>
-                    <option value="licorice">Licorice</option>
-                    <option value="spacefill">Spacefill</option>
-                </select>
-                <span class="ui label">Display:</span>
-                <select name="display" class="ui compact dropdown display1"
-                        onchange="displayChanged('viewport', this, 1); return false;">
-                    <option value="yes">Yes</option>
-                </select>
-            </div>
-        </div>
-        <div>
-            <div class="ui labeled input">
-                <span class="ui label">Input 2:</span>
-                <select class="ui compact dropdown representation2"
-                        onchange="representationChanged('viewport', this, 2); return false;">
-                    <option value="ball+stick">Ball & Stick</option>
-                    <option value="cartoon">Cartoon</option>
-                    <option value="hyperball">Hyperball</option>
-                    <option value="licorice">Licorice</option>
-                    <option value="spacefill">Spacefill</option>
-                </select>
-                <span class="ui label">Display:</span>
-                <select name="display" class="ui compact dropdown display2"
-                        onchange="displayChanged('viewport', this, 2); return false;">
-                </select>
-            </div>
-        </div>
-    </div-->
-    <div  style="height:400px;">
-        <div class="ui vertical accordion menu controls" style="float: right; width: 250px; height: 100%;">
-            <div class="active title">
-                <i class="dropdown icon"></i>Input 1 Options</div>
-            <div class="active content controls1">
-                <p>No molecules</p>
+
+
+
+    <div style="height:400px;">
+
+        <div class="controls" style="float: right; width: 180px; height: 100%; background: white;">
+
+            <div class="ui top attached tabular menu">
+                <a class="active item" data-tab="first">Input 1</a>
+                <a class="item" data-tab="second">Input 2</a>
             </div>
 
-            <div class="title">
-                <i class="dropdown icon"></i>Input 2 Options</div>
-            <div class="content controls2">
-                <p>No molecules</p>
+            <div class="ui bottom attached active tab segment input1" data-tab="first">
+               <span>No data loaded</span>
             </div>
+            <div class="ui bottom attached tab segment input2" data-tab="second">
+                <span>No data loaded</span>
+            </div>
+
         </div>
+
+
         <div class="main" style="height: 100%; background:black;"></div>
     </div>
     <div class="extra content line" style="clear: both;">
@@ -527,8 +483,12 @@ $$$$
 
 
 <script>
+$('.menu .item').tab();
 $('.ui.accordion').accordion();
 //$('.ui.dropdown').dropdown();
+
+
+
 </script>
 
 

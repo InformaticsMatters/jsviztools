@@ -10,11 +10,7 @@ function buildNglViewer(divid, data) {
     _fixSizes(outerDiv, viewer);
 
 
-
     var if1El =  $("#format1");
-    console.log("IF1: " + if1El.val());
-    console.log("Found elements: " + if1El.length);
-
 
     var stage = viewer[0].nglviewer;
     if (!stage) {
@@ -27,70 +23,13 @@ function buildNglViewer(divid, data) {
     }
 
     var controlsEl = outerDiv.find('.controls');
-    console.log("found controlsEl " + controlsEl.length);
-
     var inputsCount = 0
     for (var i=0; i < data.length; i++) {
         var d = data[i];
         if (d) {
             inputsCount++;
-            var mols = d.molecules;
+
             _loadSdf(divid, stage, d, i, controlsEl);
-
-            //console.log("Loading " + mediaType + " " + ext + " " + mols.length + " " + typeof mols);
-
-//            var stringBlob = new Blob( [ mols ], { type:  d.mediaType} );
-//            stage.loadFile( stringBlob, { ext: d.extension, name: "input" + (i+1)} ).then( function( comp ) {
-//                console.log("Processing " + comp.name);
-//                var compIdx = comp.name.substring(5);
-
-
-
-                //comp.addRepresentation(representation == null ? "ball+stick" : representation, { multipleBond: true } );
-//                comp.addRepresentation("ball+stick", { multipleBond: true } );
-//                comp.autoView();
-//                console.log("Added component " + comp.name);
-
-               // var selectEl = outerDiv.select("select.representation" + compIdx);
-                //var representation = selectEl.node().value;
-                //var displayEl = outerDiv.select("select.display" + compIdx);
-                //displayEl.selectAll("*").remove();
-
-
-
-                //displayEl.append(function() { return _createDisplayOption("all", "All"); });
-                //displayEl.append(function() { return _createDisplayOption("none", "None"); });
-//                var index = 1
-//                comp.structure.eachModel(function(model) {
-//                    console.log("Setting up model " + compIdx + " " + model.index);
-//                    displayEl.append(function() {
-//                        var opt = document.createElement("option");
-//                        opt.value = ""+index;
-//                        opt.text = ""+index;
-//                        index++;
-//                        return opt;
-//                    });
-//                });
-
-
-//                 var selectEl = outerDiv.find("select.representation" + compIdx);
-//                 //var selectEl = outerDiv.find("#representation" + compIdx);
-//                 console.log("Found elements: " + outerDiv.length + " " + selectEl.length);
-//                 var representation = selectEl.val();
-//                 console.log("representation: " + representation);
-//                 var displayEl = outerDiv.find("select.display" + compIdx);
-//                 console.log("displayEl: " + displayEl);
-//                 displayEl.empty();
-//                 var index = 1
-//                 comp.structure.eachModel(function(model) {
-//                    console.log("Setting up model " + compIdx + " " + model.index);
-//                    displayEl.append("<option value=" + index + ">" + index + "</option>");
-//                    index++;
-//                 });
-
-                console.log("Done");
-
-                //displayEl.dropdown();
 
 
 //                comp.structure.eachEntity(function(entity) {
@@ -107,37 +46,45 @@ function buildNglViewer(divid, data) {
 
 //            });
 
+            console.log("Loaded data" + (i+1) + " as " + d.extension);
+
         } else {
             console.log("No data" + (i+1));
+            var el = controlsEl.find("div.input" + (i+1));
+            el.find("*").remove();
+            el.append("<span>No data loaded</span>");
         }
 
     }
-    if (inputsCount == 0) {
-        controlsEl.append("<span>No structures loaded</span>");
-    }
+
 }
+
+var representationParams = new Map();
+representationParams.set("ball+stick", { multipleBond: true });
+
 
 function _loadSdf(outerId, stage, data, index, controlsEl) {
 
     var i = index + 1;
 
     _setupSdfControls(outerId, index, controlsEl);
-    var displayFilterEl = controlsEl.find(".display" + i);
-    console.log("found displayFilterEl " + displayFilterEl.length);
-    displayFilterEl.find("*").remove();
+    var displayFilterEl = controlsEl.find(".molecules" + i);
 
-    var representationToUse = controlsEl.find("select.representation" + i).val();
+    var representationToUse = controlsEl.find('input[name=display_radio_' + i + ']:checked').val();
     console.log("Using representation " + representationToUse);
 
     var stringBlob = new Blob( [ data.molecules ], { type: data.mediaType} );
     stage.loadFile( stringBlob, { ext: data.extension, name: "input" + i} ).then( function( comp ) {
-        comp.addRepresentation(representationToUse, { multipleBond: true } );
+        comp.addRepresentation(representationToUse, representationParams.get(representationToUse));
         comp.autoView();
-        console.log("Added component " + i + " " + comp.name);
         var mol = 1
+        displayFilterEl.find("*").remove();
         comp.structure.eachModel(function(model) {
             console.log("Setting up model " + mol + " " + model.index);
-            displayFilterEl.append('<input type="checkbox"><label>Molecule ' + mol + '</label><br>');
+            displayFilterEl.append(
+                '<div class="field"><div class="ui checkbox"><input type="checkbox" checked name="mol' + mol +
+                '" onchange="toggleDisplay(\'' + outerId + '\', this, ' + i + ', ' + mol +'); return false;">' +
+                '<label>Molecule ' + mol + '</label></div></div>');
             mol++;
         });
     });
@@ -145,36 +92,43 @@ function _loadSdf(outerId, stage, data, index, controlsEl) {
 
 function _setupSdfControls(outerId, index, el) {
 
+    console.log("Handling SDF controls");
+
     var i = index + 1;
 
-    var controlsEl = el.find(".representation" + i);
+    var controlsEl = el.find("div.sdf.controls" + i);
     if (controlsEl.length == 0) {
-        console.log("Adding SDF controls");
-        var div = el.find("div.controls" + i);
+
+        var div = el.find("div.input" + i);
 
         div.find("*").remove();
 
-        div.append('<div class="ui labeled input">' +
-            '<span class="ui label">Display:</span>' +
-            '<select class="ui compact dropdown representation' + i + '" onchange="representationChanged(\'' + outerId + '\', this, ' + (index +1) + '); return false;">"' +
-            '</div');
+        div.append('<div class="ui vertical accordion menu controls' + i + ' sdf">\n' +
+            '<div class="item representation' + i + '">\n' +
+            '<a class="active title"><i class="dropdown icon"></i>Display type</a>\n' +
+            '<div class="active content"><div class="ui form"><div class="grouped fields">\n' +
+            _createRepresentationRadio(outerId, "ball+stick", "Ball & Stick", i, true) +
+            _createRepresentationRadio(outerId, "cartoon", "Cartoon", i, false) +
+            _createRepresentationRadio(outerId, "hyperball", "Hyperball", i, false) +
+            _createRepresentationRadio(outerId, "licorice", "Licorice", i, false) +
+            _createRepresentationRadio(outerId, "spacefill", "Spacefill", i, false) +
+            '</div></div></div></div>\n' +
+            '<div class="item"><a class="title"><i class="dropdown icon"></i>Molecules</a><div class="content"><div class="ui form"><div class="grouped fields molecules' + i + '">\n' +
+            '</div></div></div></div></div>');
 
-        selectEl = div.find("select");
-        selectEl.append('<option value="ball+stick">Ball & Stick</option>');
-        selectEl.append('<option value="cartoon">Cartoon</option>');
-        selectEl.append('<option value="hyperball">Hyperball</option>');
-        selectEl.append('<option value="licorice">Licorice</option>');
-        selectEl.append('<option value="spacefill">Spacefill</option>');
-
-        //div.find("select").dropdown();
-
-
-        // add the div for the display filters
-        div.append('<p><div class="ui checkbox celled list display' + i + '"></div>');
-
+        var acc = div.find('div.ui.accordion');
+        acc.accordion();
     } else {
         console.log("SDF controls already present");
     }
+}
+
+function _createRepresentationRadio(outerId, value, label, index, checked) {
+    return '<div class="field"><div class="ui radio checkbox">' +
+    '<input type="radio" name="display_radio_' + index + '" value="' + value + '" onchange="representationChanged(\'' + outerId +
+    '\', this, ' + index +
+    '); return false;"' + (checked ? ' checked' : '') + '><label>' + label +'</label></div></div>\n';
+
 }
 
 function _createDisplayOption(value, text) {
@@ -201,49 +155,52 @@ function fitNglViewer(divid) {
 function representationChanged(divid, what, input) {
     var representation = what.value;
     console.log("Representation changed: " + representation + " " + input);
-    var outerDiv = d3.select("#" + divid);
-    var viewer = outerDiv.select(".main");
-    var stage = viewer.node().nglviewer;
-    if (!stage) {
-        console.log("Viewer not yet configured");
-        return;
+    var viewer = $("#" + divid + " .main");
+    if (viewer.length == 0) {
+        console.log("Can't find viewer");
     } else {
-        stage.eachComponent(function(comp) {
-            if (comp.name === "input" + input) {
-                comp.removeAllRepresentations();
-                comp.addRepresentation(representation);
-            }
-        });
+        var stage = viewer[0].nglviewer;
+        if (!stage) {
+            console.log("Viewer not yet configured");
+            return;
+        } else {
+            stage.eachComponent(function(comp) {
+                if (comp.name === "input" + input) {
+                    comp.removeAllRepresentations();
+                    comp.addRepresentation(representation, representationParams.get(representation));
+                }
+            });
+        }
     }
 }
 
-function displayChanged(divid, what, input) {
-    var display = what.value;
-    //console.log("Display changed: " + display + " " + input);
-    var outerDiv = d3.select("#" + divid);
-    var viewer = outerDiv.select(".main");
-    var stage = viewer.node().nglviewer;
-    if (!stage) {
-        console.log("Viewer not yet configured");
-        return;
+function toggleDisplay(divid, what, input, molNumber) {
+
+    var name = what.name;
+    var checked = what.checked;
+    console.log("Display changed: " + name + " " + input + " " + checked);
+    var viewer = $("#" + divid + " .main");
+    if (viewer.length == 0) {
+        console.log("Can't find viewer");
     } else {
-        var i = 1;
-        stage.eachComponent(function(comp) {
-            if (comp.name === "input" + input) {
-                if (display === "all") {
-                    viz = comp.setSelection("*");
-                    viz.setVisibility(true);
-                } else if (display === "none") {
-                    viz = comp.setSelection("*");
-                    viz.setVisibility(false);
-                } else {
-                    comp.setVisibility(true);
-                    viz = comp.setSelection("/" + (display -1));
-                    viz.setVisibility(true);
+        var stage = viewer[0].nglviewer;
+        if (!stage) {
+            console.log("Viewer not yet configured");
+            return;
+        } else {
+            var i = 1;
+            stage.eachComponent(function(comp) {
+                if (comp.name === "input" + input) {
+                    comp.setSelection("/0").setVisibility(true);
+                    //comp.setVisibility(true);
+                    var sel = "/" + (molNumber - 1);
+                    viz = comp.setSelection(sel);
+                    viz.setVisibility(checked);
+                    console.log("Set visibility of " + sel + " to " + checked);
                 }
-            }
-            i++;
-        });
+                i++;
+            });
+        }
     }
 }
 
@@ -252,12 +209,17 @@ function _fixSizes(outerDiv, viewer) {
     var headers = outerDiv.find(".headers");
     var status = outerDiv.find(".extra.content.line");
     var controls = outerDiv.find(".controls");
-    var outerW = outerDiv.css("width").replace("px", "");
-    var controlsW = controls.css("width").replace("px", "");
-    var houter = outerDiv.css("height");
-    var headersH = headers.css("height").replace("px", "");
-    var statusH = status.css("height").replace("px", "");
-    var h = houter.replace("px", "") - headersH - statusH;
+    //var outerW = outerDiv.css("width").replace("px", "");
+    var outerW = outerDiv.width();
+    //var controlsW = controls.css("width").replace("px", "");
+    var controlsW = controls.width();
+    //var houter = outerDiv.css("height");
+    var houter = outerDiv.height();
+    //var headersH = headers.css("height").replace("px", "");
+    var headersH = headers.height();
+    //var statusH = status.css("height").replace("px", "");
+    var statusH = status.height();
+    var h = houter - headersH - statusH - 6;
     var w = outerW - controlsW - 2;
 
     console.log("Resizing NGLViewer : outer width=" + outerW + " width=" + w + " outer height=" + houter + " inner height=" + h + "px" + " headersH=" + headersH + " statusH=" + statusH);
