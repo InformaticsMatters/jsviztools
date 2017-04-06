@@ -40,8 +40,17 @@ function buildNglViewer(divid, data) {
     }
 }
 
-var representationParams = new Map();
-representationParams.set("ball+stick", { multipleBond: true });
+var representationParamsFnMap = {
+    "ball+stick" : function(p) { p.multipleBond = true }
+}
+
+function _createRepresentationParams(representationType, initialParams) {
+    var representationParamsFn = representationParamsFnMap[representationType];
+    if (representationParamsFn) {
+        representationParamsFn(initialParams);
+    }
+    return initialParams;
+}
 
 function _loadPdb(outerId, stage, data, index, controlsEl) {
 
@@ -72,11 +81,11 @@ function _loadPdb(outerId, stage, data, index, controlsEl) {
             '" onchange="macromolChanged(\'' + outerId + '\', this, ' + i + '); return false;">' +
             '<label>Ligands</label></div></div>');
 
-        var chainNames = new Set();
-        comp.structure.eachChain(function(c) {
-            console.log("Chain: " + c.chainid + " " + c.chainname + " " + c.entity.description);
-            chainNames.add(c.chainname);
-        });
+//        var chainNames = new Set();
+//        comp.structure.eachChain(function(c) {
+//            console.log("Chain: " + c.chainid + " " + c.chainname + " " + c.entity.description);
+//            chainNames.add(c.chainname);
+//        });
 //        chainNames.forEach(function(c) {
 //            console.log("Found chain " + c);
 //            displayFilterEl.append(
@@ -137,20 +146,27 @@ function _loadSdf(outerId, stage, data, index, controlsEl) {
     var stringBlob = new Blob( [ data.molecules ], { type: data.mediaType} );
     stage.loadFile( stringBlob, { ext: data.extension, name: "input" + i} ).then( function( comp ) {
 
-        comp.addRepresentation(representationToUse, representationParams.get(representationToUse));
-        comp.autoView();
-
         var mol = 1
         displayFilterEl.find("*").remove();
         comp.structure.eachModel(function(model) {
-            console.log("Setting up model " + mol + " " + model.index);
+            //console.log("Setting up model " + mol + " " + model.index);
+            _createSdfRepresentation(comp, mol - 1, representationToUse, true);
+
             displayFilterEl.append(
                 '<div class="field"><div class="ui checkbox"><input type="checkbox" checked name="mol' + mol +
                 '" onchange="toggleDisplay(\'' + outerId + '\', this, ' + i + ', ' + mol +'); return false;">' +
                 '<label>Molecule ' + mol + '</label></div></div>');
             mol++;
         });
+
+        comp.autoView();
     });
+}
+
+function _createSdfRepresentation(comp, index, representationToUse, visible) {
+    //console.log("Setting up model " + index);
+    var params = _createRepresentationParams(representationToUse, {sele: "/" + index, visible: visible});
+    comp.addRepresentation(representationToUse, params);
 }
 
 function _setupSdfControls(outerId, index, el) {
@@ -211,7 +227,7 @@ function fitNglViewer(divid) {
 function representationChanged(divid, what, input) {
 
     var representation = what.value;
-    console.log("Representation changed: " + representation + " " + input);
+    //console.log("Representation changed: " + representation + " " + input);
     var viewer = $("#" + divid + " .main");
     if (viewer.length == 0) {
         console.log("Can't find viewer");
@@ -224,7 +240,13 @@ function representationChanged(divid, what, input) {
             stage.eachComponent(function(comp) {
                 if (comp.name === "input" + input) {
                     comp.removeAllRepresentations();
-                    comp.addRepresentation(representation, representationParams.get(representation));
+                    var mol = 0;
+                    comp.structure.eachModel(function(m) {
+                        // TODO set the visibility according to the selections
+                        var visible = $('#' + divid + ' .molecules' + input +' input[name=mol' + (mol + 1) + ']').prop('checked');
+                        _createSdfRepresentation(comp, mol, representation, visible);
+                        mol++;
+                    });
                 }
             });
         }
@@ -257,7 +279,8 @@ function macromolChanged(divid, what, input) {
                     var selector = _createSelector(undefined, displayWaters, displayIons, displayLigands)
                     console.log("Selector: " + selector);
 
-                    comp.setSelection(selector).addRepresentation(representationToUse, representationParams.get(representationToUse));
+                    var params = _createRepresentationParams(representationToUse, {})
+                    comp.setSelection(selector).addRepresentation(representationToUse, params);
                 }
             });
         }
@@ -293,7 +316,7 @@ function toggleDisplay(divid, what, input, molNumber) {
 
     var name = what.name;
     var checked = what.checked;
-    console.log("Display changed: " + name + " " + input + " " + checked);
+    //console.log("Display changed: " + name + " " + input + " " + checked);
     var viewer = $("#" + divid + " .main");
     if (viewer.length == 0) {
         console.log("Can't find viewer");
@@ -306,11 +329,16 @@ function toggleDisplay(divid, what, input, molNumber) {
             var i = 1;
             stage.eachComponent(function(comp) {
                 if (comp.name === "input" + input) {
-                    //comp.setVisibility(true);
-                    var sel = "/" + (molNumber - 1);
-                    viz = comp.setSelection(sel);
-                    viz.setVisibility(checked);
-                    console.log("Set visibility of " + sel + " to " + checked);
+
+                    var i = 1;
+                    comp.eachRepresentation(function(rep) {
+                        //console.log("Rep " + i + rep);
+                        if (i == molNumber) {
+                            rep.setVisibility(checked);
+                            console.log("Set visibility of mol " + i + " to " + checked);
+                        }
+                        i++;
+                    });
                 }
                 i++;
             });
