@@ -1,16 +1,17 @@
 <html>
 <head>
-    <meta charset="utf-8">
+  <meta charset="utf-8">
 
-    <link rel="stylesheet" type="text/css" href="simple.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.2/semantic.min.css" rel="stylesheet"
-          type="text/css"/>
+  <link rel="stylesheet" type="text/css" href="simple.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.2/semantic.min.css" rel="stylesheet"
+        type="text/css"/>
 
 
-    <script type="text/javascript" src="../libs/ngl.js"></script>
-    <script type="text/javascript" src="simple.js"></script>
-    <script src="https://code.jquery.com/jquery-3.1.0.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.2/semantic.min.js"></script>
+  <script type="text/javascript" src="../libs/ngl/ngl.js"></script>
+  <script type="text/javascript" src="../libs/marcj-css-element-queries//ResizeSensor.js"></script>
+  <script type="text/javascript" src="simple.js"></script>
+  <script src="https://code.jquery.com/jquery-3.1.0.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.2/semantic.min.js"></script>
 
 
 </head>
@@ -53,16 +54,21 @@
     }
 
 
+
+
+
+
+
 </script>
 
 
 <form id="settings">
-    <table cellpadding="5" cellspacing="5">
-        <tr>
-            <td>
-                Input1:
-                <br>
-                <textarea id="input1" rows="10" cols="50">1-pyrimethamine
+  <table cellpadding="5" cellspacing="5">
+    <tr>
+      <td>
+        Input1:
+        <br>
+        <textarea id="input1" rows="10" cols="50">1-pyrimethamine
   Cerius2 12180216023D 1   1.00000
  Structure written by MMmdl.
  30 31  0  0  0  0  0  0  0  0999 V2000
@@ -422,71 +428,78 @@ M  CHG  2  24   1  26  -1
 M  END
 $$$$
 </textarea>
-            </td>
-            <td>
-                Input2:
-                <br>
-                <textarea id="input2" rows="10" cols="50"></textarea>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <select id="format1" class="ui compact dropdown">
-                    <option value="sdf">SDF</option>
-                    <option value="pdb">PDB</option>
-                </select>
-            </td>
-            <td>
-                <select id="format2" class="ui compact dropdown">
-                    <option value="sdf">SDF</option>
-                    <option value="pdb">PDB</option>
-                </select>
-            </td>
-        </tr>
-    </table>
-    <br>
-    <button id="load" onclick="loadData(); return false;">Click to load the structures</button>
+      </td>
+      <td>
+        Input2:
+        <br>
+        <textarea id="input2" rows="10" cols="50"></textarea>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <select id="format1" class="ui compact dropdown">
+          <option value="sdf">SDF</option>
+          <option value="pdb">PDB</option>
+        </select>
+      </td>
+      <td>
+        <select id="format2" class="ui compact dropdown">
+          <option value="sdf">SDF</option>
+          <option value="pdb">PDB</option>
+        </select>
+      </td>
+    </tr>
+  </table>
+  <br>
+  <button id="load" onclick="loadData(); return false;">Click to load the structures</button>
 </form>
 
 
-<div id="viewport" class="nglviewer" style="width:700px;">
-    <div class="headers" style="clear: both;">
-        <span>Title Bar</span>
+<div id="viewport" class="nglviewer">
+  <div class="header">
+    <span>Title Bar</span>
+  </div>
+
+  <div class="body">
+
+    <div class="controls">
+
+      <div class="ui top attached tabular menu">
+        <a class="active item" data-tab="first">Input 1</a>
+        <a class="item" data-tab="second">Input 2</a>
+      </div>
+
+      <div class="ui bottom attached active tab segment input1" data-tab="first">
+        <span>No data loaded</span>
+      </div>
+      <div class="ui bottom attached tab segment input2" data-tab="second">
+        <span>No data loaded</span>
+      </div>
+
     </div>
 
 
+    <div class="viewer"></div>
 
-    <div style="height:400px;">
-
-        <div class="controls" style="float: right; width: 180px; height: 100%; background: white;">
-
-            <div class="ui top attached tabular menu">
-                <a class="active item" data-tab="first">Input 1</a>
-                <a class="item" data-tab="second">Input 2</a>
-            </div>
-
-            <div class="ui bottom attached active tab segment input1" data-tab="first">
-               <span>No data loaded</span>
-            </div>
-            <div class="ui bottom attached tab segment input2" data-tab="second">
-                <span>No data loaded</span>
-            </div>
-
-        </div>
+  </div>
 
 
-        <div class="main" style="height: 100%; background:black;"></div>
-    </div>
-    <div class="extra content line" style="clear: both;">
-        <span>Status</span>
-    </div>
+  <div class="footer">
+    <span>Status</span>
+  </div>
 </div>
 
+<div>
+  <p></p>
+  <p>NGL viewer from Alex Rose</p>
+  <p>Crappy Javascript by Tim</p>
+</div>
 
 <script>
 $('.menu .item').tab();
 $('.ui.accordion').accordion();
 //$('.ui.dropdown').dropdown();
+
 
 
 
