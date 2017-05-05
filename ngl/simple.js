@@ -2,6 +2,44 @@ var representationParamsFnMap = {
     "ball+stick" : function(p) { p.multipleBond = true }
 }
 
+
+function resizeNglViewer(divid, width, height) {
+    var outerDiv = $('#' + divid);
+    outerDiv.css("width", width + "px");
+    outerDiv.css("height", height + "px");
+    fitNglViewer(divid);
+}
+
+/** Resize the stage */
+function fitNglViewer(divid) {
+
+    var outerDiv = $('#' + divid);
+
+    var headers = outerDiv.find(".headers");
+    var status = outerDiv.find(".footer");
+    var controls = outerDiv.find(".controls");
+    var outerW = outerDiv.width();
+    var outerH = outerDiv.height();
+    var controlsW = controls.width();
+    var headerH = headers.height();
+    var footerH = status.height();
+    var h = outerH - headerH - footerH - 6;
+    var w = outerW - controlsW - 2;
+
+//    console.log("Resizing NGLViewer : outerW=" + outerW + " outerH=" + outerH +
+//        " innerW=" + w + " innerH=" + h +
+//        " headerH=" + headerH + " footerH=" + footerH);
+
+    var viewer = $("#" + divid + '_nglviewer');
+
+    if (viewer.length == 1) {
+        var stage = viewer[0].nglviewer;
+        if (stage) {
+            stage.handleResize();
+        }
+    }
+}
+
 /** Main entry point for setting up the NGL viewer.
 *
 * The data and configs element params are arrays, the first containing the data, the second the configuration
@@ -9,55 +47,58 @@ var representationParamsFnMap = {
 * Each data element is a Javascript object with 3 properties:
 * mediaType: Content type of the molecules property. Currently must be text/plain.
 * extension: Identifies the type of data. Currently 'sdf' or 'pdb' are supported.
-* molecules: The content of data that is fed to teh NGL viewer. Currently text in SDF or PDB format.
+* molecules: The content of data that is fed to the NGL viewer. Currently text in SDF or PDB format.
 *
 * This method can be called multiple times with different data. The same NGL viewer will be reused.
 *
 * @param divid The ID of the div that is to contain the contents.
 * @param data Array of data elements. Expects up to 2 elements, each of which can be null.
-* @param configs Array of configs, one for each data element. Defaults are used if this is null
+* @param configs The configs, includign the display type for each data element. Defaults are used if this is null
 * or any element of the array is null.
+* @param display Araray of elements that define which molecules are visible
 */
-function buildNglViewer(divid, data, configs) {
+function buildNglViewer(divid, data, config, display) {
     console.log("buildNglViewer in " + divid);
 
     var viewer_id =  divid + "_nglviewer"
     var outerDiv = $("#" + divid);
     var viewer = outerDiv.find('.viewer');
     viewer[0].id = viewer_id;
+    var form = outerDiv.find('form.config');
     var configBuilders = [];
 
-    console.log("Container is " + viewer + " -> " + viewer_id);
-    fixSizes();
+    //console.log("Container is " + viewer + " -> " + viewer_id);
 
     var stage = viewer[0].nglviewer;
     if (!stage) {
         console.log("Creating new stage in " + viewer_id);
         stage = new NGL.Stage( viewer_id );
         viewer[0].nglviewer = stage;
-        new ResizeSensor(viewer, function() {
-            console.log('Stage resized');
-            fixSizes();
-            stage.handleResize();
-        });
+
     } else {
         console.log("Clearing out old stage");
         stage.removeAllComponents();
     }
+//    if (config != undefined && config.orientation != undefined) {
+//        console.log("Orienting: " + JSON.stringify(config.orientation));
+//        stage.viewerControls.orient(config.orientation);
+//    }
 
     var controlsEl = outerDiv.find('.controls');
     var inputsCount = 0
     for (var i=0; i < data.length; i++) {
         var d = data[i];
-        var c = (configs == undefined || configs.length <= i ? null : configs[i]);
+        var c = (config == undefined || config.inputs == undefined || config.inputs.length <= i ? null : config.inputs[i]);
+        var o = (config == undefined ? null : config.orientation);
+        var v = (display == undefined || display.length <= i ? null : display[i]);
         if (d) {
             inputsCount++;
             if (d.extension === 'sdf') {
-                var config = sdfConfig(i, d, c);
+                var config = sdfConfig(i, d, c, v, o);
                 configBuilders.push(config);
                 config.load();
             } else if (d.extension === 'pdb') {
-                var config = pdbConfig(i, d, c);
+                var config = pdbConfig(i, d, c, v, o);
                 configBuilders.push(config);
                 config.load();
             } else {
@@ -75,27 +116,9 @@ function buildNglViewer(divid, data, configs) {
     }
 
 
-    function fixSizes() {
-        var headers = outerDiv.find(".header");
-        var status = outerDiv.find(".footer");
-        var controls = outerDiv.find(".controls");
-        var outerW = outerDiv.width();
-        var controlsW = controls.width();
-        var houter = outerDiv.height();
-        var headerH = headers.height();
-        var footerH = status.height();
-        var h = houter - headerH - footerH - 6;
-        var w = outerW - controlsW - 2;
-
-//        console.log("Resizing NGLViewer : outerW=" + outerW + " innerW=" + w + " outerH=" + houter +
-//            " innerH=" + h + " headerH=" + headerH + " footerH=" + footerH);
-        viewer.css("width", w + "px");
-        viewer.css("height", h + "px");
-    }
-
 // --------------------- SDF related --------------------- //
 
-    function sdfConfig(index, data, initialConfig) {
+    function sdfConfig(index, data, initialConfig, displays, orientation) {
 
         // index is zero based, input is 1 based
         var input = index + 1;
@@ -104,15 +127,17 @@ function buildNglViewer(divid, data, configs) {
         sdfConfig.config = function() {
             var c = baseConfig();
             c.representation = getRepresentation(input);
-            c.molecules = getSelectedMolecules(input);
             config = c;
             return c;
+        }
+
+        sdfConfig.display = function() {
+            return getSelectedMolecules(input);
         }
 
         function defaultConfig() {
             var c = baseConfig();
             c.representation = 'ball+stick';
-            // molecules being null means all molecules
             return c;
         }
 
@@ -130,42 +155,50 @@ function buildNglViewer(divid, data, configs) {
             setupSdfControls(representationToUse);
 
             var displayFilterEl = controlsEl.find(".molecules" + input);
-            //console.log("Using representation " + representationToUse);
+            displayFilterEl.find("*").remove();
+            console.log("Using representation " + representationToUse);
 
-            var stringBlob = new Blob( [ data.molecules ], { type: data.mediaType} );
-            stage.loadFile( stringBlob, { ext: data.extension, name: "input" + input} ).then( function( comp ) {
+            if (data.size === undefined || data.size > 0) {
+                var stringBlob = new Blob( [ data.molecules ], { type: data.mediaType} );
+                console.log("Loading SDF");
+                stage.loadFile( stringBlob, { ext: data.extension, name: "input" + input} ).then( function( comp ) {
 
-                var mol = 1
-                displayFilterEl.find("*").remove();
-                comp.structure.eachModel(function(model) {
-                    //console.log("Setting up model " + mol + " " + model.index);
-                    var visible = false;
-                    if (config == null || config.molecules == null) {
-                        visible = true;
-                    } else if (config.molecules.indexOf(mol) > -1) {
-                        visible = true;
+                    var mol = 1
+
+                    comp.structure.eachModel(function(model) {
+                        console.log("Setting up model " + mol + " " + model.index);
+                        var vis = false;
+                        if (displays == null) {
+                            vis = true;
+                        } else if (displays.indexOf(mol) > -1) {
+                            vis = true;
+                        }
+
+                        createSdfRepresentation(comp, mol - 1, representationToUse, vis);
+
+                        var added = displayFilterEl.append(
+                          '<div class="field"><div class="ui checkbox"><input type="checkbox" ' +
+                          (vis ? 'checked ' : '') + 'name="mol' + mol + '">' +
+                          '<label>Molecule ' + mol + '</label></div></div>');
+
+                        mol++;
+                    });
+
+                    // add change listeners that react to molecule selection
+                    displayFilterEl.find('input').each(function(x) {
+                      $(this).change(function() {
+                          toggleVisibility(this, x+1);
+                          return false;
+                      });
+                    });
+
+                    comp.autoView();
+                    if (orientation) {
+                      //console.log("Orienting SDF");
+                      stage.viewerControls.orient(orientation);
                     }
-
-                    createSdfRepresentation(comp, mol - 1, representationToUse, visible);
-
-                    var added = displayFilterEl.append(
-                      '<div class="field"><div class="ui checkbox"><input type="checkbox" ' +
-                      (visible ? 'checked ' : '') + 'name="mol' + mol + '">' +
-                      '<label>Molecule ' + mol + '</label></div></div>');
-
-                    mol++;
-              });
-
-              // add change listeners that react to molecule selection
-              displayFilterEl.find('input').each(function(x) {
-                  $(this).change(function() {
-                      toggleDisplay(this, x+1);
-                      return false;
-                  });
-              });
-
-              comp.autoView();
-            });
+                });
+            }
           }
 
         function setupSdfControls(defaultRepresentation) {
@@ -180,19 +213,42 @@ function buildNglViewer(divid, data, configs) {
 
               div.find("*").remove();
 
+//              div.append('<div class="ui vertical accordion menu controls' + input + ' sdf">\n' +
+//
+//                '<div class="item"><a class="active title"><i class="dropdown icon"></i>Molecules</a><div class="active content">' +
+//                '<div class="ui form"><div class="grouped fields molecules' + input + '">\n' +
+//                '</div></div></div></div>\n' +
+//
+//                  '<div class="item representation' + input + '">\n' +
+//                  '<a class="title"><i class="dropdown icon"></i>Display type</a>\n' +
+//                  '<div class="content"><div class="ui form"><div class="grouped fields">\n' +
+//                  createRepresentationRadio("ball+stick", "Ball & Stick", input, defaultRepresentation === "ball+stick") +
+//                  createRepresentationRadio("cartoon", "Cartoon", input, defaultRepresentation === "cartoon") +
+//                  createRepresentationRadio("hyperball", "Hyperball", input, defaultRepresentation === "hyperball") +
+//                  createRepresentationRadio("licorice", "Licorice", input, defaultRepresentation === "licorice") +
+//                  createRepresentationRadio("spacefill", "Spacefill", input, defaultRepresentation === "spacefill") +
+//                  '</div></div></div></div>\n' +
+//
+//
+//                  '</div>');
+
               div.append('<div class="ui vertical accordion menu controls' + input + ' sdf">\n' +
+
+                  '<div class="item"><a class="active title"><i class="dropdown icon"></i>Molecules</a>' +
+                  '<div class="active content"><div class="ui form"><div class="grouped fields molecules' + input + '">\n' +
+                  '</div></div></div></div>\n' +
+
                   '<div class="item representation' + input + '">\n' +
-                  '<a class="active title"><i class="dropdown icon"></i>Display type</a>\n' +
-                  '<div class="active content"><div class="ui form"><div class="grouped fields">\n' +
+                  '<a class="title"><i class="dropdown icon"></i>Display type</a>\n' +
+                  '<div class="content"><div class="ui form"><div class="grouped fields">\n' +
                   createRepresentationRadio("ball+stick", "Ball & Stick", input, defaultRepresentation === "ball+stick") +
                   createRepresentationRadio("cartoon", "Cartoon", input, defaultRepresentation === "cartoon") +
                   createRepresentationRadio("hyperball", "Hyperball", input, defaultRepresentation === "hyperball") +
                   createRepresentationRadio("licorice", "Licorice", input, defaultRepresentation === "licorice") +
                   createRepresentationRadio("spacefill", "Spacefill", input, defaultRepresentation === "spacefill") +
                   '</div></div></div></div>\n' +
-                  '<div class="item"><a class="title"><i class="dropdown icon"></i>Molecules</a><div class="content">' +
-                  '<div class="ui form"><div class="grouped fields molecules' + input + '">\n' +
-                  '</div></div></div></div></div>');
+
+                 '</div>');
 
               var acc = div.find('div.ui.accordion');
               acc.find('input').change(function() {
@@ -236,9 +292,9 @@ function buildNglViewer(divid, data, configs) {
             }
         }
 
-        /** Toggle the display of the nth <molNumber> for input <input>
+        /** Toggle the visibility of the nth <molNumber> for input <input>
         */
-        function toggleDisplay(what, molNumber) {
+        function toggleVisibility(what, molNumber) {
 
             var name = what.name;
             var checked = what.checked;
@@ -273,7 +329,7 @@ function buildNglViewer(divid, data, configs) {
 
     // --------------------- PDB related --------------------- //
 
-    function pdbConfig(index, data, initialConfig) {
+    function pdbConfig(index, data, initialConfig, displays, orientation) {
 
         // index is zero based, input is 1 based
         var input = index + 1;
@@ -287,6 +343,10 @@ function buildNglViewer(divid, data, configs) {
             c.showLigands = isShowLigands();
             config = c;
             return c;
+        }
+
+        pdbConfig.display = function() {
+            return null;
         }
 
         function defaultConfig() {
@@ -319,6 +379,9 @@ function buildNglViewer(divid, data, configs) {
 
                 comp.addRepresentation(representationToUse);
                 comp.autoView();
+                if (orientation) {
+                    stage.viewerControls.orient(orientation);
+                }
 
                 displayFilterEl.find("*").remove();
                 displayFilterEl.append(
@@ -465,6 +528,7 @@ function buildNglViewer(divid, data, configs) {
 
         nullConfig.config = function() { return null; }
         nullConfig.load = function() {}
+        nullConfig.display = function() { return null; }
 
         return nullConfig;
     }
@@ -501,23 +565,30 @@ function buildNglViewer(divid, data, configs) {
 
     function configChanged() {
         var config = buildConfig();
+        saveConfig(config, configBuilders[0].display(), configBuilders[1].display());
     }
 
     function buildConfig() {
         var config = {};
-        config.config1 = configBuilders[0].config();
-        config.config2 = configBuilders[1].config();
-        var rep1 = getRepresentation(1);
-        var rep2 = getRepresentation(2);
-        //console.log("Config1: " + JSON.stringify(config.config1));
-        //console.log("Config2: " + JSON.stringify(config.config2));
+        var inputs = [];
+        inputs.push(configBuilders[0].config());
+        inputs.push(configBuilders[1].config());
+        config.inputs = inputs;
+        config.orientation = stage.viewerControls.getOrientation();
 
         return config;
     }
 
+    function saveConfig(config, vis1, vis2) {
+
+        if (form.length == 1) {
+            var json =  JSON.stringify(config);
+            //console.log("Config: " + json);
+            form.find('.config').attr('value', json);
+            form.find('.display1').attr('value', JSON.stringify(vis1));
+            form.find('.display2').attr('value', JSON.stringify(vis2));
+            form.find('.updateConfig').click();
+        }
+    }
+
 }
-
-
-
-
-

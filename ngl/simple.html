@@ -6,13 +6,10 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.2/semantic.min.css" rel="stylesheet"
         type="text/css"/>
 
-
   <script type="text/javascript" src="../libs/ngl/ngl.js"></script>
-  <script type="text/javascript" src="../libs/marcj-css-element-queries//ResizeSensor.js"></script>
   <script type="text/javascript" src="simple.js"></script>
   <script src="https://code.jquery.com/jquery-3.1.0.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.2/semantic.min.js"></script>
-
 
 </head>
 <body>
@@ -42,7 +39,6 @@
         }
 
 
-
         try {
             buildNglViewer("viewport", [data1, data2]);
         } catch (e) {
@@ -50,14 +46,21 @@
         }
 
         return false;
-
     }
 
-
-
-
-
-
+    function resizeViewer() {
+        var w = document.getElementById("width").value;
+        var h = document.getElementById("height").value;
+        console.log("Resizing: " + w + "x" + h);
+        try {
+            //var outerDiv = $('#viewport');
+            //outerDiv.css("width", w + "px");
+            //outerDiv.css("height", h + "px");
+            resizeNglViewer("viewport", w, h);
+        } catch (e) {
+            console.log("Error: " + e.message);
+        }
+    }
 
 </script>
 
@@ -451,12 +454,17 @@ $$$$
     </tr>
   </table>
   <br>
-  <button id="load" onclick="loadData(); return false;">Click to load the structures</button>
+    <button id="load" onclick="loadData(); return false;">Click to load the structures</button>
+    Width: <input id="width" size="4" value="550">
+    Height: <input id="height" size="4" value="330">
+    <button id="resize" onclick="resizeViewer(); return false;">Resize</button>
+    <br>
+
 </form>
 
 
 <div id="viewport" class="nglviewer">
-  <div class="header">
+  <div class="headers">
     <span>Title Bar</span>
   </div>
 
@@ -497,12 +505,6 @@ $$$$
 
 <script>
 $('.menu .item').tab();
-$('.ui.accordion').accordion();
-//$('.ui.dropdown').dropdown();
-
-
-
-
 </script>
 
 
