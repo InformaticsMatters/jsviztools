@@ -46,8 +46,8 @@ function fitNglViewer(divid) {
 * for the corresponding data. Currently 2 inputs are handled, though more can easily be supported.
 * Each data element is a Javascript object with 3 properties:
 * mediaType: Content type of the molecules property. Currently must be text/plain.
-* extension: Identifies the type of data. Currently 'sdf' or 'pdb' are supported.
-* molecules: The content of data that is fed to the NGL viewer. Currently text in SDF or PDB format.
+* extension: Identifies the type of data. Currently sdf, pdb and mol2 are supported.
+* molecules: The content of data that is fed to the NGL viewer. Currently text in SDF, PDB or MOL2 format.
 *
 * This method can be called multiple times with different data. The same NGL viewer will be reused.
 *
@@ -98,7 +98,11 @@ function buildNglViewer(divid, data, config, display) {
                 configBuilders.push(config);
                 config.load();
             } else if (d.extension === 'pdb') {
-                var config = pdbConfig(i, d, c, v, o);
+                var config = macromolConfig(i, d, c, v, o, 'pdb');
+                configBuilders.push(config);
+                config.load();
+            } else if (d.extension === 'mol2') {
+                var config = macromolConfig(i, d, c, v, o, 'mol2');
                 configBuilders.push(config);
                 config.load();
             } else {
@@ -156,17 +160,16 @@ function buildNglViewer(divid, data, config, display) {
 
             var displayFilterEl = controlsEl.find(".molecules" + input);
             displayFilterEl.find("*").remove();
-            console.log("Using representation " + representationToUse);
+            //console.log("Using representation " + representationToUse);
 
             if (data.size === undefined || data.size > 0) {
                 var stringBlob = new Blob( [ data.molecules ], { type: data.mediaType} );
-                console.log("Loading SDF");
                 stage.loadFile( stringBlob, { ext: data.extension, name: "input" + input} ).then( function( comp ) {
 
                     var mol = 1
 
                     comp.structure.eachModel(function(model) {
-                        console.log("Setting up model " + mol + " " + model.index);
+                        //console.log("Setting up model " + mol + " " + model.index);
                         var vis = false;
                         if (displays == null) {
                             vis = true;
@@ -212,25 +215,6 @@ function buildNglViewer(divid, data, config, display) {
               var div = controlsEl.find("div.input" + input);
 
               div.find("*").remove();
-
-//              div.append('<div class="ui vertical accordion menu controls' + input + ' sdf">\n' +
-//
-//                '<div class="item"><a class="active title"><i class="dropdown icon"></i>Molecules</a><div class="active content">' +
-//                '<div class="ui form"><div class="grouped fields molecules' + input + '">\n' +
-//                '</div></div></div></div>\n' +
-//
-//                  '<div class="item representation' + input + '">\n' +
-//                  '<a class="title"><i class="dropdown icon"></i>Display type</a>\n' +
-//                  '<div class="content"><div class="ui form"><div class="grouped fields">\n' +
-//                  createRepresentationRadio("ball+stick", "Ball & Stick", input, defaultRepresentation === "ball+stick") +
-//                  createRepresentationRadio("cartoon", "Cartoon", input, defaultRepresentation === "cartoon") +
-//                  createRepresentationRadio("hyperball", "Hyperball", input, defaultRepresentation === "hyperball") +
-//                  createRepresentationRadio("licorice", "Licorice", input, defaultRepresentation === "licorice") +
-//                  createRepresentationRadio("spacefill", "Spacefill", input, defaultRepresentation === "spacefill") +
-//                  '</div></div></div></div>\n' +
-//
-//
-//                  '</div>');
 
               div.append('<div class="ui vertical accordion menu controls' + input + ' sdf">\n' +
 
@@ -327,15 +311,15 @@ function buildNglViewer(divid, data, config, display) {
         return sdfConfig;
     }
 
-    // --------------------- PDB related --------------------- //
+    // --------------------- PDB and Mol2 related --------------------- //
 
-    function pdbConfig(index, data, initialConfig, displays, orientation) {
+    function macromolConfig(index, data, initialConfig, displays, orientation, format) {
 
         // index is zero based, input is 1 based
         var input = index + 1;
         var config = (initialConfig == null ? defaultConfig() : initialConfig);
 
-        pdbConfig.config = function() {
+        macromolConfig.config = function() {
             var c = baseConfig();
             c.representation = getRepresentation(input);
             c.showWaters = isShowWaters();
@@ -345,7 +329,7 @@ function buildNglViewer(divid, data, config, display) {
             return c;
         }
 
-        pdbConfig.display = function() {
+        macromolConfig.display = function() {
             return null;
         }
 
@@ -358,18 +342,18 @@ function buildNglViewer(divid, data, config, display) {
         function baseConfig() {
             return {
                 version: 1.0,
-                type: 'pdb',
+                type: format,
             };
         }
 
-        pdbConfig.load = function() {
+        macromolConfig.load = function() {
 
             var representationToUse = (config.representation == undefined ? "cartoon" : config.representation);
             var showWaters = (config.showWaters == undefined || config.showWaters);
             var showIons = (config.showIons == undefined || config.showIons);
             var showLigands = (config.showLigands == undefined || config.showLigands);
 
-            setupPdbControls(representationToUse);
+            setupMacromolControls(representationToUse);
 
             var displayFilterEl = controlsEl.find(".components" + input);
             //console.log("Using representation " + representationToUse);
@@ -397,42 +381,25 @@ function buildNglViewer(divid, data, config, display) {
                 // add change listeners that react to component type selection
                 displayFilterEl.find('input').each(function(x) {
                     $(this).change(function() {
-                        pdbChanged(this);
+                        macromolChanged(this);
                         return false;
                     });
                 });
 
-
-        //        var chainNames = new Set();
-        //        comp.structure.eachChain(function(c) {
-        //            console.log("Chain: " + c.chainid + " " + c.chainname + " " + c.entity.description);
-        //            chainNames.add(c.chainname);
-        //        });
-        //        chainNames.forEach(function(c) {
-        //            console.log("Found chain " + c);
-        //            displayFilterEl.append(
-        //                '<div class="field"><div class="ui checkbox"><input type="checkbox" checked name="chain_' + c +
-        //                '" onchange="macromolDisplay(\'' + divid + '\', this, ' + i + '); return false;">' +
-        //                '<label>Chain ' + c + '</label></div></div>');
-        //        });
-
-    //            comp.structure.eachPolymer(function(p) {
-    //                console.log("Polymer: " + p.residueIndexStart + " - " + p.residueIndexEnd);
-    //            });
             });
         }
 
-        function setupPdbControls(representationToUse) {
-            //console.log("Handling PDB controls for input" + input);
+        function setupMacromolControls(representationToUse) {
+            //console.log("Handling Macromol controls for input" + input);
 
-            var pdbControlsEl = controlsEl.find("div.pdb.controls" + input);
-            if (pdbControlsEl.length == 0) {
+            var macromolControlsEl = controlsEl.find("div.macromol.controls" + input);
+            if (macromolControlsEl.length == 0) {
 
                 var div = controlsEl.find("div.input" + input);
 
                 div.find("*").remove();
 
-                div.append('<div class="ui vertical accordion menu controls' + input + ' pdb">\n' +
+                div.append('<div class="ui vertical accordion menu controls' + input + ' macromol">\n' +
                     '<div class="item representation' + input + '">\n' +
                     '<a class="active title"><i class="dropdown icon"></i>Display type</a>\n' +
                     '<div class="active content"><div class="ui form"><div class="grouped fields">\n' +
@@ -447,24 +414,24 @@ function buildNglViewer(divid, data, config, display) {
 
                 var acc = div.find('div.ui.accordion');
                 acc.find('input').change(function() {
-                    pdbChanged(this);
+                    macromolChanged(this);
                     return false;
                 });
                 acc.accordion();
             } else {
-                //console.log("PDB controls already present");
+                //console.log("Macromol controls already present");
             }
         }
 
-        /** onchange handler for PDB files
+        /** onchange handler for macromol files
         */
-        function pdbChanged(what) {
+        function macromolChanged(what) {
 
             var representationToUse = controlsEl.find('.representation' + input +' input[name=display_radio_' + input + ']:checked').val();
             var displayWaters = isShowWaters();
             var displayIons = isShowIons();
             var displayLigands = isShowLigands();
-            console.log("PDB changed: " + input + " " + representationToUse + " waters=" + displayWaters + " ions=" + displayIons + " ligands=" + displayLigands);
+            console.log("Macromol changed: " + input + " " + representationToUse + " waters=" + displayWaters + " ions=" + displayIons + " ligands=" + displayLigands);
 
             if (!stage) {
                 console.log("Viewer not yet configured");
@@ -473,7 +440,7 @@ function buildNglViewer(divid, data, config, display) {
                 stage.eachComponent(function(comp) {
                     if (comp.name === "input" + input) {
                         comp.removeAllRepresentations();
-                        var selector = createPdbSelector(displayWaters, displayIons, displayLigands)
+                        var selector = createMacromolSelector(displayWaters, displayIons, displayLigands)
 
                         var params = createRepresentationParams(representationToUse, {});
                         //console.log("Selector: " + selector + " Params: " + JSON.stringify(params));
@@ -484,7 +451,7 @@ function buildNglViewer(divid, data, config, display) {
             }
         }
 
-        function createPdbSelector(displayWaters, displayIons, displayLigands) {
+        function createMacromolSelector(displayWaters, displayIons, displayLigands) {
 
             if (!displayWaters && !displayIons && !displayLigands) { // none
                 return "not hetero";
@@ -517,7 +484,7 @@ function buildNglViewer(divid, data, config, display) {
             return controlsEl.find('.components' + input + ' input[name=ligands' + ']').prop('checked');
         }
 
-        return pdbConfig;
+        return macromolConfig;
     }
 
 
