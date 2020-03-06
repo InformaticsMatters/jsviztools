@@ -1,5 +1,5 @@
 This repository aims to provide a set of Javascript components for visualisation of scientific data, 
-especically chamical data.
+especically chemical data.
 
 The aim is to provide a consistent set of APIs and user intefaces across a range of components that 
 can be used in downstream projects.
